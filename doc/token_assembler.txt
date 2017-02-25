@@ -1,0 +1,378 @@
+# * **************************************************************** **
+#
+# File: token_assembler.py
+# Desc: Documentation for the token assembler, EdAsm.py
+# Note: Matches EdAsm.py version 1.2  (17/06/16)
+#
+# Author: Brian Danilko, Likeable Software (brian@likeablesoftware.com)
+#
+# Copyright 2006, 2016, Microbric Pty Ltd.
+#
+
+
+Parsing:
+--------
+
+Lines are chopped into WORDS at whitespace that is not inside a string.
+
+WORDS are:
+- Operators which are specific words, at the beginning of a line
+- Comments start with '#'
+- Constants start with '$' and have a NUMBER or CHAR
+- Mod/Regs start with '%' and have two hex digits or
+  a device_name|loc:reg_name
+  Examples:
+     - %f0,
+     - %_cpu:acc,
+     - %_devices:sertx,
+     - %right_motor:control (with 'DEVICE motora, 2, right_motor' in affect)
+
+- Labels start with ':'
+- Variable names start with '@'
+- Numbers which are variables, offsets or data depending on context
+
+NUMBERs look like ddddd[/bb] where:
+-   ddddd are digits in the base
+-   bb is a base in ('2', '10', '16')
+-   Default is base 10
+
+Lines can start with:
+- a comment or empty (the line is discarded)
+- a label
+- an operator
+
+
+Operators
+---------
+
+MOVE
+----
+
+* Generally move data about
+mov[bw] CONST dest              # Move constant to dest
+# Note - there is a special short form for moving constants beween 0 and 7
+
+mov[bw] MOD/REG dest            # Move from a MOD/REG to dest
+mov[bw] VAR dest                # Move from a variable to dest
+- dest can be one of: MOD/REG, VAR
+
+* Store accumulator to various places, efficiently
+mov[bw] %acc MOD/REG|VAR       # Special encoding for this case
+
+* Move 16-bit low byte var into 8-bit mod/reg
+molb VAR MOD/REG               # Move low byte (in 16-bit space) into 8-bit Mod/Reg
+
+* special encoding for moves to ACC. Saves a byte in tokens
+mov[bw] MOD/REG|VAR|CONST %acc  # use the destination encoding 11
+
+
+* Checkpoint the system time into 8-bit space
+movtime wordCONST byteVAR       # Move system time + constant to byteVAR
+movtime wordVAR byteVAR         # Move system time + value of wordVAR to byteVAR
+
+* Stack operations
+push[bw] CONST|VAR|MOD/REG      # push the const, variable or MOD/REG onto the stack
+pop[bw] VAR|MOD/REG             # pop the stack into the variable or MOD/REG
+push    [_cpu:acc]              # push the accumulator to the stack. Size is already know
+
+MATH
+----
+
+* Unary operators
+not[bw] %_cpu:acc|VAR           # not the accumulator or the value of VAR
+dec[bw] %_cpu:acc|VAR           # decrement the accumulator or the value of VAR
+inc[bw] %_cpu:acc|VAR           # increment the accumulator or the value of VAR
+
+* Accumulator conversions
+conv                            # Convert the accumulator from 8-bit to 16-bit
+convl                           # Convert the lsb of the 16-bit value to 8-bit
+convm                           # Convert the msb of the 16-bit value to 8-bit
+
+* Comparisons (result of compare sets flags for equal, less and greater)
+cmptime byteVAR                 # Compare the current system time with the one stored at byteVAR
+cmp[bw] CONST|VAR               # Compare the accumulator with the const or variable
+
+* Basic math
+add[bw] CONST|VAR               # Add the const or variable to the accumulator
+sub[bw] CONST|VAR               # Subtract the const or variable from the accumulator
+mul[bw] CONST|VAR               # Multiply the const or variable with the accumulator
+
+div[bw] CONST|VAR       # Divide the accumulator by the const or variable and leave
+                                # the integer portion of the result in the accumulator
+mod[bw] CONST|VAR       # Divide the accumulator by the const or variable and leave
+                                # the remainder portion of the result in the accumulator
+
+* Shifts and Logical
+shl[bw] VAR       # Shift left the accumulator by the const or variable
+shr[bw] VAR       # Shift right the accumulator by the const or variable
+shlb CONST       # Shift left the accumulator by the const or variable
+shrb CONST       # Shift right the accumulator by the const or variable
+and[bw] CONST|VAR       # And the const or variable with the accumulator
+or[bw]  CONST|VAR       # Or the const or variable with the accumulator
+xor[bw] CONST|VAR       # Xor the const or variable with the accumulator
+
+* Bit set/clr
+bitset bit MOD/REG              # Sets bit in MOD/REG without changing other bits
+bitclr bit MOD/REG              # Clears bin in MOD/REG without changing other bits
+
+BRANCHES and SUBROUTINES
+------------------------
+
+* Branches (PC has offset added to it - if label then offset is computed)
+bra OFFSET|LABEL                # Branch always to LABEL or PC+OFFSET
+bre OFFSET|LABEL                # Branch if equal flag set to LABEL or PC+OFFSET
+brne OFFSET|LABEL               # Branch if equal flag clear to LABEL or PC+OFFSET
+brgr OFFSET|LABEL               # Branch if greater flag set to LABEL or PC+OFFSET
+brge OFFSET|LABEL               # Branch if greater or equal flag set to LABEL or PC+OFFSET
+brl OFFSET|LABEL                # Branch if lesser flag set to LABEL or PC+OFFSET
+brle OFFSET|LABEL               # Branch if lesser or equal flag set to LABEL or PC+OFFSET
+
+brz OFFSET|LABEL                # Same as bre
+brnz OFFSET|LABEL               # Same as brne
+
+* Call subroutines (PC is saved, then offset is added to it)
+suba OFFSET|LABEL               # Call always to LABEL or PC+OFFSET
+sube OFFSET|LABEL               # Call if equal flag set to LABEL or PC+OFFSET
+subne OFFSET|LABEL              # Call if equal flag clear to LABEL or PC+OFFSET
+subgr OFFSET|LABEL              # Call if greater flag set to LABEL or PC+OFFSET
+subge OFFSET|LABEL              # Call if greater or equal flag set to LABEL or PC+OFFSET
+subl OFFSET|LABEL               # Call if lesser flag set to LABEL or PC+OFFSET
+suble OFFSET|LABEL              # Call if lesser or equal flag set to LABEL or PC+OFFSET
+
+sube OFFSET|LABEL               # Same as sube
+subne OFFSET|LABEL              # Same as subne
+
+* Misc
+ret                             # Return from a subroutine by popping off a stack frame
+dbnz OFFSET|LABEL               # Decrement the counter in the CPU module and branch if not zero
+dsnz OFFSET|LABEL               # Decrement the counter in the CPU module and call if not zero
+
+* Stack access
+stinc STACK_ENTRIES            # Add space onto stack for local vars
+stdec STACK_ENTRIES            # Remove space from stack
+stra[bw]  OFFSET               # Read stack at SP-OFFSET into Acc
+stwa[bw]  OFFSET               # Write Acc to stack at SP-OFFSET
+
+* Debug output (this may or may not be supported by firmware - if debug output is
+                not supported, then the token will be ignored)
+out[bw]   VAR                  # debug output of the contents of the variable
+
+* Write data into memory
+dat[bw] VAR N DATA_1 ... DATA_N  # writes data to the variable
+                                 # N can be '*' then the DATA is counted for you
+                                 # Can be up to 16 elements of data
+
+SPECIALS
+--------
+
+* Mask/Unmask event handling interrupts
+enable                          # Allow event handling interrupts
+disable                         # Disallow event handling interrupts
+
+* tell interpreter to signal an error
+error ERROR_CONST               # Raise ERROR_CONST
+
+* Stop - finished a program stream
+stop                            # stop processing tokens for this area (main or each event)
+
+* Provides limits for the data spaces and token space
+LIMITS   byte_limit, word_limit, lcd_limit, event_handlers, token_byte_limit
+
+- Limits is only allowed before any other BEGIN/END section
+
+* Describes what devices are connected where
+DEVICE   type, loc [,name]
+
+- Device is only allowed before any other BEGIN/END section
+Types are one of:
+- Motor-a, Motor-b
+- digin
+- digout
+- analogin
+- tracker
+- irtx
+- irrx
+- beeper
+
+Name is optional
+Location is a number from 1 to 12
+
+
+VERSION major, minor            # major and minor are between 0 and 15
+
+FINISH                          # finishes a token stream
+
+- Finish is only allowed outside of any BEGIN/END section
+
+
+BEGIN type [,arg1, ..., argn]
+END   type
+
+Types (and args) are one of:
+- MAIN,
+- EVENT (args = MOD/REG, MASK, VALUE)
+- FIRMWARE
+
+* Reserves areas of the data space for system use
+RESERV[ABW] start, length
+
+* Names variables in data space and/or puts values there
+DAT[BW]  name, loc [,len [,val1, ...., valn]]
+
+Notes on DAT:
+- vals are optional
+- vals can be numbers (plus or minus) for DATW, numbers (plus only), or chars for DATB
+- name can be '*', which means there is no name
+- loc can be '*', which allows the assembler to place it in the space
+- len is optional if vals are not present, then it defaults to 1
+- len can be '*', which means to count the values following
+- name and loc can not both be '*'
+
+* Add binary values into a firmware download
+BINB val1, ...., valn
+
+- vals are between 0 and 255, or strings
+
+* Include other files
+INSERT type, filename           # Insert tokens/data at this location
+
+Types are one of:
+- tokens                        # File contains token mnemonics to be assembled
+- binary                        # Only valid in FIRMWARE section
+
+
+EXAMPLES
+--------
+
+* 1. a simple program
+
+VERSION 6,0
+DEVICE led, 11, Left_LED
+
+BEGIN MAIN
+
+bitset 0 %Left_LED:output
+
+stop
+END MAIN
+FINISH
+
+
+* 2. Slightly more complex
+
+VERSION 6,0
+DEVICE beeper, 6, SOUNDER1
+DEVICE led, 11, Left_LED
+
+BEGIN MAIN
+DATB _tune_store 0 17
+DATB _main_time_buffer * 8
+DATB _event_time_buffer * 8
+DATB test1 *
+DATW test2 *
+
+datb @_tune_store * 19 0
+movb $0 %SOUNDER1:tunecode
+bitset 0 %SOUNDER1:action
+
+:Bric6_0
+movb %SOUNDER1:status %_cpu:acc
+and $1
+brz :Bric6_0
+bitclr $0 %SOUNDER1:status
+
+stop
+END MAIN
+
+BEGIN EVENT %SOUNDER1:status $8 $8
+
+bitset 0 %Left_LED:output
+
+END EVENT
+
+FINISH
+
+
+Appendix: Using EdAsm.py (version 1.2)
+-------------------------------------
+
+* Python version 2.7 is required to run EdAsm.py
+
+* To get help on all of the program options:
+  EdAsm.py -h
+
+* To get help about what registers and device names are:
+  EdAsm.py -r
+
+* A typical run to just CHECK syntax and output debugging info:
+  EdAsm.py -ds INPUT_FILE
+
+* To get MORE debugging output:
+  EdAsm.py -ds -l debug INPUT_FILE
+
+* To output a binary file with header (but NOT preamble):
+  EdAsm.py -b OUTPUT_BIN_FILE INPUT_FILE
+
+* To output a binary file with header and preamble:
+  EdAsm.py -p -b OUTPUT_BIN_FILE INPUT_FILE
+
+* To output a binary file with header and preamble, and with debugging output:
+  EdAsm.py -p -ds -b OUTPUT_BIN_FILE INPUT_FILE
+
+* To output an audio wav file (with header and preamble):
+  EdAsm.py -p -w OUTPUT_WAV_FILE INPUT_FILE
+
+* To output an audio wav file, and binary file:
+  EdAsm.py -p -w OUTPUT_WAV_FILE -b OUTPUT_BIN_FILE INPUT_FILE
+
+
+
+
+
+
+Appendix: NEW ASSEMBLER STUFF added with since version 1.2
+----------------------------------------------------------
+
+* Store accumulator to various places
+mov[bw] %_cpu:acc MOD/REG|VAR  # Special encoding for this case
+
+* Move 16-bit low byte var into 8-bit mod/reg
+molb VAR MOD/REG               # Move low byte (in 16-bit space) into 8-bit Mod/Reg
+
+* special encoding for moves to ACC. Saves a byte in tokens
+mov[bw] MOD/REG|VAR|CONST %_cpu:acc  # use the destination encoding 11
+
+* special encoding for pops from %_cpu:acc
+pop[bw] VAR|MOD/REG             # pop the stack into the variable or MOD/REG
+
+* New stack operations
+push  %_cpu:acc                # push the accumulator to the stack. Size is already know
+
+stinc STACK_ENTRIES            # Add space onto stack for local vars
+stdec STACK_ENTRIES            # Remove space from stack
+stra  OFFSET                   # Read stack at SP-OFFSET into Acc
+stwa  OFFSET                   # Write Acc to stack at SP-OFFSET
+
+error ERROR                    # Raise ERROR
+
+* Debug output (this may or may not be supported by firmware - if debug output is
+                not supported, then the token will be ignored)
+out[bw]   VAR                  # debug output of the contents of the variable
+
+
+* Bitwise arithmetic (and/or/xor) with the acc and 8 and 16-bit variables and constants
+and[bw]  CONST|VAR
+or[bw]   CONST|VAR
+xor[bw]  CONST|VAR
+
+* Division
+div[bw]  CONST|VAR              # Divide the accumulator by the const or variable and leave
+                                # the integer portion of the result in the accumulator
+mod[bw]  CONST|VAR              # Divide the accumulator by the const or variable and leave
+                                # the remainder portion of the result in the accumulator
+
+* Shifts and Logical
+shl[bw] VAR                     # Shift left the accumulator by the const or variable
+shlb    CONST                   # as max is 15, only byte constant needed
+shr[bw] VAR                     # Shift right the accumulator by the const or variable
+slrb    CONST                   # as max is 15, only byte constant needed
