@@ -61,8 +61,9 @@ def CheckCall(node):
         raise RuntimeError("CheckCall() called with wrong argument")
 
     if ((len(node.keywords) == 0) and     # no keywords
-        (node.starargs is None) and  # no starargs
-        (node.kwargs is None) and     # no kwargs
+        (getattr(node, "starargs", None) is None) and  # no starargs Py2
+        (getattr(node, "kwargs", None) is None) and     # no kwargs Py2
+        # TODO: check for Py3 starargs and kwargs
         GetVarName(node.func)):
         return GetVarName(node.func)
     else:
@@ -261,25 +262,18 @@ class Converter(object):
                          node.lineno, node.col_offset, "DECORATORS ")
             raise program.ParseError
 
-        args = node.args
-        if ((args.vararg is not None) or (args.kwarg is not None) or
-            (len(args.defaults) > 0)):
+        try:
+            paramNames = CheckGetParamNames(node)
+        except:
             io.Out.Error(io.TS.PARSE_TOO_COMPLEX,
-                         "file:{0}:{1}: Syntax Error, {2} code too complex for Ed.Py",
+                         "file:{0}:{1}: Syntax Error, {2} code too complex for Ed.Py (only simple params are supported)",
                          node.lineno, node.col_offset, "FUNCTION")
             raise program.ParseError
-
+            
+        
         # get all of the stuff in the function!
         newFunction = program.Function(nodeName, True)
-
-        for a in node.args.args:
-            if (Name(a) != "Name"):
-                io.Out.Error(io.TS.PARSE_TOO_COMPLEX,
-                             "file:{0}:{1}: Syntax Error, {2} code too complex for Ed.Py",
-                             node.lineno, node.col_offset, "FUNCTION")
-                raise program.ParseError
-
-            newFunction.args.append(a.id)
+        newFunction.args.extend(paramNames)
 
         # Enforce that all class methods first arg is always 'self'. Basically
         # good style and makes parsing and optimising easier.
@@ -317,25 +311,17 @@ class Converter(object):
                          node.lineno, node.col_offset, "DECORATORS ")
             raise program.ParseError
 
-        args = node.args
-        if ((args.vararg is not None) or (args.kwarg is not None) or
-            (len(args.defaults) > 0)):
+        try:
+            paramNames = CheckGetParamNames(node)
+        except:
             io.Out.Error(io.TS.PARSE_TOO_COMPLEX,
-                         "file:{0}:{1}: Syntax Error, {2} code too complex for Ed.Py",
+                         "file:{0}:{1}: Syntax Error, {2} code too complex for Ed.Py (only simple params are supported)",
                          node.lineno, node.col_offset, "FUNCTION")
             raise program.ParseError
-
+        
         # get all of the stuff in the function!
         newFunction = program.Function(nodeName)
-
-        for a in node.args.args:
-            if (Name(a) != "Name"):
-                io.Out.Error(io.TS.PARSE_TOO_COMPLEX,
-                             "file:{0}:{1}: Syntax Error, {2} code too complex for Ed.Py",
-                             node.lineno, node.col_offset, "FUNCTION")
-                raise program.ParseError
-
-            newFunction.args.append(a.id)
+        newFunction.args.extend(paramNames)
 
         # Enforce that all class methods first arg is always 'self'. Basically
         # good style and makes parsing and optimising easier.
@@ -694,6 +680,12 @@ class Converter(object):
             # assign this to tempCount and return
             operand = program.Value(name=node.id)
             statementList.append(program.UAssign(target, "UAdd", operand))
+        elif (nodeName == "NameConstant"):
+            # TODO: Fix this for Python 3
+            io.Out.Error(io.TS.PARSE_NOT_SUPPORTED,
+                             "file:{0}:{1}: Syntax Error, {2}not supported in Ed.Py",
+                             lineNo, node.col_offset, "NameConstants")
+            raise program.ParseError
         elif (nodeName == "Attribute"):
             if (Name(node.value) == "Name"):
                 operand = program.Value(name=node.value.id + "." + node.attr)
@@ -949,7 +941,7 @@ def Parse(filename, programIR):
 
     try:
         fh = open(filename, "rb")
-        src = "".join(fh.readlines())
+        src = b"".join(fh.readlines())
         fh.close()
     except Exception:
         io.Out.Error(io.TS.FILE_OPEN_ERROR, "file:0: Could not access file {0}", filename)
@@ -1016,6 +1008,22 @@ def ParseString(programString, filename, programIR):
 
     return rtc
 
+def CheckGetParamNames(node):
+    assert node.args.vararg == None
+    assert node.args.kwarg == None
+    assert len(node.args.defaults) == 0
+    
+    result = []
+    for arg in node.args.args:
+        if isinstance(arg, ast.Name): # Py2
+            result.append(arg.id)
+        elif isinstance(getattr(arg, "arg", None), str): # Py3
+            result.append(arg.arg)
+        else:
+            raise Exception("Only simple parameters are supported")
+    
+    return result
+    
 
 # Only to be used as a module
 if __name__ == '__main__':
