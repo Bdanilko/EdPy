@@ -929,7 +929,7 @@ def assem_spec_data(which, words, line):
     # Make the tokens
     if (len(values)):
 
-        tokens_to_create = (len(values) + 14) / 15
+        tokens_to_create = (len(values) + 14) // 15
         last = len(values) % 15
 
         # print(tokens_to_create, last)
