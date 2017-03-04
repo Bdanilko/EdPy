@@ -1,0 +1,5 @@
+*.pyc
+*.wav
+.pydevproject
+.project
+src/desktop.ini
