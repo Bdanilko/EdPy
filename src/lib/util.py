@@ -137,8 +137,8 @@ def CheckPythonVersion():
     ver = sys.version_info
 
     # Using version 2.0 access to version (instead of assuming 2.7 here)
-    if (ver[0] != 2) or (ver[1] < 7):
-        rawText = "Python version must be 2.7 or greater but not 3.0 or greater,"
+    if (ver < (2,7)):
+        rawText = "Python version must be 2.7 or greater,"
         rawText += " this Python version is %d.%d." % (ver[0], ver[1])
         print("FATAL: " + rawText, file=sys.stderr)
         sys.exit(1)
