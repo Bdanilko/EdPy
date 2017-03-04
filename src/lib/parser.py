@@ -681,11 +681,9 @@ class Converter(object):
             operand = program.Value(name=node.id)
             statementList.append(program.UAssign(target, "UAdd", operand))
         elif (nodeName == "NameConstant"):
-            # TODO: Fix this for Python 3
-            io.Out.Error(io.TS.PARSE_NOT_SUPPORTED,
-                             "file:{0}:{1}: Syntax Error, {2}not supported in Ed.Py",
-                             lineNo, node.col_offset, "NameConstants")
-            raise program.ParseError
+            # These nodes exist in Python 3
+            operand = program.Value(name=str(node.value))
+            statementList.append(program.UAssign(target, "UAdd", operand))
         elif (nodeName == "Attribute"):
             if (Name(node.value) == "Name"):
                 operand = program.Value(name=node.value.id + "." + node.attr)
