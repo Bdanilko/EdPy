@@ -1586,6 +1586,8 @@ def VerifyEdisonVariables(programIR):
 
     varNames = edpy_values.variables.keys()
     varValues = {}
+    varLines = {}
+
 
     # Make sure they are set in __main__
     newMain = []
@@ -1621,6 +1623,7 @@ def VerifyEdisonVariables(programIR):
 
                     # A valid set -- record it and discard the operation
                     varValues[t.Name()] = op.operand.constant
+                    varLines[t.Name()] = line
                     continue
 
         newMain.append(op)
@@ -1634,6 +1637,17 @@ def VerifyEdisonVariables(programIR):
                          "file:{0}:: Syntax Error, {1} was not set in __main__",
                          0, n)
             raise program.OptError
+
+    version = varValues["Ed.EdisonVersion"]
+    distance = varValues["Ed.DistanceUnits"]
+
+    # check that Ed.DistanceUnits are valid for the version
+    if (version == edpy_values.constants["Ed.V1"] and
+        distance != edpy_values.constants["Ed.TIME"]):
+        io.Out.Error(io.TS.OPT_ED_FUNCTION_NOT_AVAILABLE,
+                     "file:{0}:: Syntax Error, {1} is not available in Edison Version {2}",
+                     varLines["Ed.DistanceUnits"], "drive by distance", version)
+        raise program.OptError
 
     io.Out.DebugRaw("VEV-0 Found all Ed variables: {}".format(varValues))
 
@@ -1658,8 +1672,6 @@ def VerifyEdisonVariables(programIR):
                     raise program.OptError
 
     programIR.EdVariables = varValues
-    version = varValues["Ed.EdisonVersion"]
-    distance = varValues["Ed.DistanceUnits"]
     badFunctions = edpy_values.notAvailableFunctions[version]
     notUsedWithTime = ("Ed.ResetDistance", "Ed.SetDistance", "Ed.ReadDistance")
 
@@ -1687,6 +1699,7 @@ def VerifyEdisonVariables(programIR):
                                      "file:{0}:: Syntax Error, {1} is not available in Edison Version {2}",
                                      line, op.funcName, version)
                         raise program.OptError
+
                     if ((varValues["Ed.DistanceUnits"] == edpy_values.constants["Ed.TIME"]) and
                         (op.funcName in notUsedWithTime)):
                         io.Out.Error(io.TS.OPT_ED_FUNCTION_NOT_USEFUL,
@@ -1842,7 +1855,7 @@ def FixUpCalls(programIR):
                     #print(len(op.args[1].strConst), op.args[0].constant)
                     if (len(op.args[1].strConst) > op.args[0].constant):
                         io.Out.Error(io.TS.OPT_ED_LIST_TOO_LONG,
-                                     "file:{0}:: Syntax Error, {1} initial value larger then {2}",
+                                     "file:{0}:: Syntax Error, {1} initial value larger then first argument {2}",
                                      line, "Ed.TuneString", op.args[0].constant)
                         raise program.OptError
 

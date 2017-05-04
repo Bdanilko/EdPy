@@ -691,7 +691,7 @@ class Converter(object):
             else:
                 io.Out.Error(io.TS.PARSE_NOT_SUPPORTED,
                              "file:{0}:{1}: Syntax Error, {2}not supported in Ed.Py",
-                             lineNo, 0, "")
+                             lineNo, 0, "nested classes ")
                 raise program.ParseError
 
         elif (nodeName == "Str"):
@@ -732,13 +732,13 @@ class Converter(object):
             tempCount += 1
             operand = program.Value(name=node.value.id, iVariable=tempCount)
             # make another 1 or more assignment, return the next possible tempCount
-            tempCount = self.HandleExpr(node.slice.value, statementList, tempCount)
+            tempCount = self.HandleExpr(node.slice.value, statementList, tempCount, lineNo)
             statementList.append(program.UAssign(target, "UAdd", operand))
 
         elif (nodeName == "UnaryOp"):
             tempCount += 1
             operand = program.Value(name=tempCount)
-            tempCount = self.HandleExpr(node.operand, statementList, tempCount)
+            tempCount = self.HandleExpr(node.operand, statementList, tempCount, lineNo)
             statementList.append(program.UAssign(target, Name(node.op), operand))
 
         elif (nodeName == "BinOp"):
@@ -754,10 +754,10 @@ class Converter(object):
             # TODO: Evaluating left before right. Do we have to be more intelligent here?
             tempCount += 1
             left = program.Value(name=tempCount)
-            tempCount = self.HandleExpr(node.left, statementList, tempCount)
+            tempCount = self.HandleExpr(node.left, statementList, tempCount, lineNo)
             tempCount += 1
             right = program.Value(name=tempCount)
-            tempCount = self.HandleExpr(node.right, statementList, tempCount)
+            tempCount = self.HandleExpr(node.right, statementList, tempCount, lineNo)
             statementList.append(program.BAssign(target, left, op, right))
 
         elif (nodeName == "BoolOp"):
@@ -786,7 +786,7 @@ class Converter(object):
                 tempCount += 1
                 check = program.BoolCheck(marker, op, program.Value(name=tempCount),
                                           program.Value(name=resultTemp))
-                tempCount = self.HandleExpr(v, statementList, tempCount)
+                tempCount = self.HandleExpr(v, statementList, tempCount, lineNo)
                 statementList.append(check)
 
             if (op == "Or"):
@@ -812,7 +812,7 @@ class Converter(object):
             for a in node.args:
                 tempCount += 1
                 args.append(program.Value(name=tempCount))
-                tempCount = self.HandleExpr(a, statementList, tempCount)
+                tempCount = self.HandleExpr(a, statementList, tempCount, lineNo)
             statementList.append(program.Call(target, funcName, args))
 
         elif (nodeName == "Compare"):
@@ -825,16 +825,16 @@ class Converter(object):
             # TODO: Evaluating left before right. Do we have to be more intelligent here?
             tempCount += 1
             left = program.Value(name=tempCount)
-            tempCount = self.HandleExpr(node.left, statementList, tempCount)
+            tempCount = self.HandleExpr(node.left, statementList, tempCount, lineNo)
             tempCount += 1
             right = program.Value(name=tempCount)
-            tempCount = self.HandleExpr(rhs, statementList, tempCount)
+            tempCount = self.HandleExpr(rhs, statementList, tempCount, lineNo)
             statementList.append(program.BAssign(target, left, op, right))
 
         else:
             io.Out.Error(io.TS.PARSE_NOT_SUPPORTED,
                          "file:{0}:{1}: Syntax Error, {2}not supported in Ed.Py",
-                         lineNo, 0, "")
+                         lineNo, 0, nodeName + " expr ")
             raise program.ParseError
 
         return tempCount
