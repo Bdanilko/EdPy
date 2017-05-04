@@ -266,7 +266,7 @@ class Converter(object):
             paramNames = CheckGetParamNames(node)
         except:
             io.Out.Error(io.TS.PARSE_TOO_COMPLEX,
-                         "file:{0}:{1}: Syntax Error, {2} code too complex for Ed.Py (only simple params are supported)",
+                         "file:{0}:{1}: Syntax Error, {2} code too complex for Ed.Py",
                          node.lineno, node.col_offset, "FUNCTION")
             raise program.ParseError
             
@@ -315,7 +315,7 @@ class Converter(object):
             paramNames = CheckGetParamNames(node)
         except:
             io.Out.Error(io.TS.PARSE_TOO_COMPLEX,
-                         "file:{0}:{1}: Syntax Error, {2} code too complex for Ed.Py (only simple params are supported)",
+                         "file:{0}:{1}: Syntax Error, {2} code too complex for Ed.Py",
                          node.lineno, node.col_offset, "FUNCTION")
             raise program.ParseError
         
