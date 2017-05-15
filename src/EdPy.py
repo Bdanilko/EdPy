@@ -151,10 +151,10 @@ def ProcessCommandArgs(args):
 
     # TODO: Change defaults back to normal ones for web app
     parser.add_argument("-o", type=util.LowerStr, default="json",  # default="console",
-                        choices=zip(*outputChoices)[0],
+                        choices=list(zip(*outputChoices))[0],
                         help="Output location (default:%(default)s)")
     parser.add_argument("-l", type=util.LowerStr,
-                        choices=zip(*levelChoices)[0], default="warn",  # default="debug",
+                        choices=list(zip(*levelChoices))[0], default="warn",  # default="debug",
                         help="Output level (default:%(default)s). " +
                         "\nAll output from previous levels and this one will be generated")
 
@@ -179,7 +179,7 @@ def ProcessCommandArgs(args):
 
 if __name__ == '__main__':
 
-    LOG.log("START - Cmd line:{:s}".format(sys.argv[1:]))
+    LOG.log("START - Cmd line:{}".format(sys.argv[1:]))
 
     rtc = 1
     # Console so that debugging can work while we do the parsing

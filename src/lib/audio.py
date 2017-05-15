@@ -46,6 +46,11 @@ SAMPLES_PER_QUANTA = WAVE_SAMPLE_RATE_HZ / 2000
 
 # ############ main audio creator class ###############################################
 
+# i2b is function for converting int to byte
+if sys.version_info[0] == 2:
+    i2b = chr
+else:
+    i2b = lambda x: bytes([x])
 
 class Output(object):
     """Create a wav file"""
@@ -166,7 +171,7 @@ class Output(object):
         waveWriter.writeframes(self.createSilenceRamping(1000, self.sampleRate))
 
     def createAudioRamping(self, midQuantas, sample_rate):
-        data = ""
+        data = b""
         samples_per_quanta = sample_rate / 2000
 
         # write fars
@@ -186,7 +191,7 @@ class Output(object):
 
     def ramp(self, newLeft, newRight, samples):
         # print "ramp", samples
-        data = ""
+        data = b""
 
         if (samples < len(RAMP)):
             print("ERROR - audio transition is smaller then the ramp size")
@@ -200,13 +205,13 @@ class Output(object):
             left = int(self.lastLeft + (diffLeft * RAMP[count] / 100))
             right = int(self.lastRight + (diffRight * RAMP[count] / 100))
             # print "Ramp %d/%d" % (left, right)
-            data += chr(left) + chr(right)
+            data += i2b(left) + i2b(right)
 
             count += 1
 
         while (count < samples):
             # print "Stable %d/%d" % (newLeft, newRight)
-            data += chr(newLeft) + chr(newRight)
+            data += i2b(newLeft) + i2b(newRight)
             count += 1
 
         self.lastLeft = newLeft

@@ -415,7 +415,7 @@ class TokenAnalyser(object):
         # Now try to fit in the floating variables. Use a best-fit strategy where the smallest
         # hole is used for each request. Also the block sizes are tried largest to smallest
         floats = [(x[1], x[3]) for x in variables if x[0] == "data" if x[2] < 0]
-        floats.sort(cmp=lambda x, y: cmp(x[1], y[1]), reverse=True)
+        floats.sort(key=lambda x: x[1], reverse=True)
         v_free = fixed_v_free
 
         for name, length in floats:
