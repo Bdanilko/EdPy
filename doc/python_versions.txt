@@ -1,0 +1,26 @@
+Python versions - 16/May/2017
+
+EdPy.py was developed using python 2.7 and used code borrowed from EdWare which was also python 2 based.
+But Python 3 is the way to go -- so "from __future__ import xxxx" was used to prepare for that day.
+
+Converting from python 2 to python 3 is one thing, but a bigger issue is that python generates the first
+stage in the parsing process. It uses ast.parse (see lib/parser.py NormalPythonParse) to convert the
+source into an Abstract Syntax Tree. That tree is then converted to an internal representation (IR)
+which is independent of the python version. But the converter (see lib/parser.py class Converter)
+needs to know what the python generated AST will look like.
+
+The python AST is very stable, so small python version changes should not affect the functioning of
+EdPy.py. BUT a change could affect things, so we settled on python 2.7 (and 2.7.10 specifically)
+for the website and for the majority of testing.
+
+Still, python 3 has been around for a long time (a decade?) so this project would like to go in that
+direction. Along came Aivar Annamaa, who has contributed changes to allow the code to run under both
+2.7 and 3.6.
+
+So the situation is now:
+2.7 -- python version used on the website and it has the most testing
+3.6 -- new changes which Aivar has done some testing on -- i.e. he reports that clap_controlled_driving
+       works fine using either 2.7 or 3.6
+
+Final notes -- Use python 2.7 if stability is extremely important to you, but the future is python 3
+so you may want to go in that direction. Thanks Aivar for your work (check out thonny.org)!
