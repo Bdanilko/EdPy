@@ -542,7 +542,8 @@ def Ed_ReadRandom():
 
 def Ed_ReadClapSensor():
     data = (Ed.ReadModuleRegister8Bit(Ed.MODULE_BEEPER, Ed.REG_BEEP_STATUS_8) & Ed.CLAP_MASK)
-    Ed.ClearModuleRegisterBit(Ed.MODULE_BEEPER, Ed.REG_BEEP_STATUS_8, 2)
+    if data:
+        Ed.ClearModuleRegisterBit(Ed.MODULE_BEEPER, Ed.REG_BEEP_STATUS_8, Ed.CLAP_DETECTED_BIT)
     return data
 
 
@@ -598,12 +599,16 @@ def Ed_ReadCountDown(units):
 
 def Ed_ReadMusicEnd():
     # end if tune done, tone done
+    result = 0
     status = Ed.ReadModuleRegister8Bit(Ed.MODULE_BEEPER, Ed.REG_BEEP_STATUS_8)
     # don't clear clap detected status or tune error
-    Ed.ClearModuleRegisterBit(Ed.MODULE_BEEPER, Ed.REG_BEEP_STATUS_8, 0)
-    Ed.ClearModuleRegisterBit(Ed.MODULE_BEEPER, Ed.REG_BEEP_STATUS_8, 1)
-    return ((status & 0x03) != 0)   # return 1 if any end status was set
-
+    if (status & 0x01):
+        Ed.ClearModuleRegisterBit(Ed.MODULE_BEEPER, Ed.REG_BEEP_STATUS_8, 0)
+        result = 1
+    if (status & 0x02):
+        Ed.ClearModuleRegisterBit(Ed.MODULE_BEEPER, Ed.REG_BEEP_STATUS_8, 1)
+        result = 1
+    return result
 
 def Ed_ReadTuneError():
     # Don't clear anything, just return 1 if error bit set

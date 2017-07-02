@@ -242,7 +242,7 @@ constants = {
     "Ed.LINE_ON_WHITE":      0x00,
     "Ed.LINE_MASK":          0x01,
     "Ed.LINE_CHANGE_MASK":   0x02,
-    "Ed.LINE_CHANGE_BIT":    0x01,
+    "Ed.LINE_CHANGE_BIT":    1,
     "Ed.LINE_CHANGE_MASK":   0x02,
 
     "Ed.KEYPAD_NONE":        0x00,
@@ -253,6 +253,7 @@ constants = {
     "Ed.CLAP_NOT_DETECTED":  0x00,
     "Ed.CLAP_DETECTED":      0x04,
     "Ed.CLAP_MASK":          0x04,
+    "Ed.CLAP_DETECTED_BIT":  2,
     "Ed.DRIVE_STRAINED":     0x01,
     "Ed.DRIVE_NO_STRAIN":    0x00,
     "Ed.MUSIC_FINISHED":     0x01,
