@@ -108,7 +108,7 @@ def ProcessCommandArgs(args):
                         help="Add preamble to the binary file written.")
 
     parser.add_argument("-l", type=util.LowerStr,
-                        choices=zip(*levelChoices)[0], default="error",  # default="debug",
+                        choices=list(zip(*levelChoices))[0], default="error",  # default="debug",
                         help="Output level (default:%(default)s). " +
                         "\nAll output from previous levels and this one will be generated")
 
