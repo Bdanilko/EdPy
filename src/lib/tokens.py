@@ -45,6 +45,8 @@ MAX_UWORD = 0xffff
 MIN_SBYTE = -0x7f
 MAX_SBYTE = 0x7f
 
+BAD_CRC_LENGTHS = [766]
+
 # No LCD,  so lcd limit == 0
 LIMIT_NAMES = ("Bytes", "Words", "LCD chars", "Event handlers", "Token bytes")
 MAX_LIMITS = (256, 256, 0, 16, 4096)
@@ -565,21 +567,38 @@ class TokenAnalyser(object):
                                     "major versions 0x6 (not 0x%x)" % (self.token_stream.version[0]))
 
         header_list = []
+        added_bytes = 0
         if (self.token_stream.download_type[0] == "firmware"):
             # header is just size and crc
             bytes = []
             for t in self.token_stream.token_stream:
                 bytes.extend(t.get_token_bits())
+
+            # skip bad crc lengths
+            if len(bytes) in BAD_CRC_LENGTHS:
+                print("Warning - skipping bad CRC length at {} bytes.".format(len(bytes)))
+                added_bytes = 1
+                bytes.extend([0xff])
+
             header_list.extend([0, 0, 0, 0])
             header_list[0], header_list[1] = word_to_bytes(len(bytes))
             crc = calculate_crc(bytes)
             header_list[2], header_list[3] = word_to_bytes(crc)
-            return ("firmware", self.token_stream.version, header_list)
+            return ("firmware", self.token_stream.version, header_list, added_bytes)
 
         else:
             bytes = []
             for t in self.token_stream.token_stream:
                 bytes.extend(t.get_token_bits())
+
+
+            # # TEST CODE - get to a bad crc length
+            # print("Token bytes:", len(bytes))
+            # if (len(bytes) < 760):
+            #     added_bytes = 760-len(bytes)
+            #     print("Added", added_bytes, "bytes")
+            #     bytes.extend([0xff] * added_bytes)
+            #     print("Bytes now:", len(bytes))
 
             # data_bytes(2), data_crc(2), 8-bit vars, 16-bit vars, program_offset(2)
             header_list.extend([0, 0, 0, 0, 0, 0, 0, 0])
@@ -619,11 +638,18 @@ class TokenAnalyser(object):
 
             # finally update the length and crc
             new_bytes = header_list[4:] + bytes
+
+            # skip bad crc lengths
+            if len(new_bytes) in BAD_CRC_LENGTHS:
+                print("Warning - skipping bad CRC length at {} bytes.".format(len(new_bytes)))
+                added_bytes += 1
+                new_bytes.extend([0xff])
+
             header_list[0], header_list[1] = word_to_bytes(len(new_bytes))
             crc = calculate_crc(new_bytes)
             header_list[2], header_list[3] = word_to_bytes(crc)
 
-            return ("program", self.token_stream.version, header_list)
+            return ("program", self.token_stream.version, header_list, added_bytes)
 
     def dump_extras(self):
         print("Section breaks:", self.token_stream.section_breaks)

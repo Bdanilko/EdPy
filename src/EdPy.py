@@ -65,7 +65,7 @@ def main(args):
 
         # print(statements)
         dBytes, dString, dType, version = token_assembler.assemble_lines(statements, False)
-        # print (dType, version)
+        # print("Size:", len(dBytes), len(dString), dType, version)
         if (len(dBytes) == 0 or dType == 0 or version == 0):
             rtc = 1
         elif (not args.checkOnly) and (not args.nowav):
