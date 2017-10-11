@@ -154,19 +154,22 @@ constants = {
     "Ed.V2": 2,
 
     "Ed.NOTE_A_6": 18181,        # 1760 Hz, 18181 count
-    "Ed.NOTE_B_SHARP_6": 17167,  # 1864 Hz, 17167 count
+    "Ed.NOTE_A_SHARP_6": 17167,  # 1864 Hz, 17167 count
+    "Ed.NOTE_B_SHARP_6": 17167,  # 1864 Hz, 17167 count, NAME KEPT FOR COMPATIBILITY
     "Ed.NOTE_B_6": 16202,        # 1975 Hz, 16202 count
     "Ed.NOTE_C_7": 15289,        # 2093 Hz, 15289 count
-    "Ed.NOTE_D_SHARP_7": 14433,  # 2217 Hz, 14433 count
+    "Ed.NOTE_C_SHARP_7": 14433,  # 2217 Hz, 14433 count
     "Ed.NOTE_D_7": 13622,        # 2349 Hz, 13622 count
-    "Ed.NOTE_E_SHARP_7": 12856,  # 2489 Hz, 12856 count
+    "Ed.NOTE_D_SHARP_7": 12856,  # 2489 Hz, 12856 count
     "Ed.NOTE_E_7": 12135,        # 2637 Hz, 12135 count
+    "Ed.NOTE_E_SHARP_7": 12135,  # 2637 Hz, 12135 count, NAME KEPT FOR COMPATIBILITY
     "Ed.NOTE_F_7": 11457,        # 2793 Hz, 11457 count
-    "Ed.NOTE_G_SHARP_7": 10814,  # 2959 Hz, 10814 count
+    "Ed.NOTE_F_SHARP_7": 10814,  # 2959 Hz, 10814 count
     "Ed.NOTE_G_7": 10207,        # 3135 Hz, 10207 count
-    "Ed.NOTE_A_SHARP_7": 9632,   # 3322 Hz, 9632 count
+    "Ed.NOTE_G_SHARP_7": 9632,   # 3322 Hz, 9632 count
     "Ed.NOTE_A_7": 9090,         # 3520 Hz, 9090 count
-    "Ed.NOTE_B_SHARP_7": 8581,   # 3729 Hz, 8581 count
+    "Ed.NOTE_A_SHARP_7": 8581,   # 3729 Hz, 8581 count
+    "Ed.NOTE_B_SHARP_7": 8581,   # 3729 Hz, 8581 count, NAME KEPT FOR COMPATIBILITY
     "Ed.NOTE_B_7": 8099,         # 3951 Hz, 8099 count
     "Ed.NOTE_C_8": 7644,         # 4186 Hz, 7644 count
     "Ed.NOTE_REST": 0,
