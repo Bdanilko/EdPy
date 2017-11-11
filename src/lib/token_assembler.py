@@ -76,7 +76,7 @@ def assem_file(f_name, called_from=[], pass_err=None):
             print(output)
         return False
 
-    fh = file(f_name, 'rt')
+    fh = file(f_name, 'rU')
 
     # get each line but insert a file if find 'INSERT TOKENS'
     line_num = 1
