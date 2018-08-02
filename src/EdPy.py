@@ -115,7 +115,7 @@ def ProcessCommandArgs(args):
 
     testChoices = ("pass", "fail")
 
-    version = "1.2.7"
+    version = "1.2.9"
     parser = argparse.ArgumentParser(prog="EdPy.py", description="Full Ed.Py compiler, version %s - from source to wav file." % (version,))
     parser.add_argument("langPath", metavar="LANG", type=argparse.FileType('r'),
                         help="Path to a language file")
