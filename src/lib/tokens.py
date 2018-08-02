@@ -45,7 +45,20 @@ MAX_UWORD = 0xffff
 MIN_SBYTE = -0x7f
 MAX_SBYTE = 0x7f
 
-BAD_CRC_LENGTHS = [766]
+# The firmware has a problem correctly computing the CRC when the size is a
+# multiple of 256. This function finds all of the 'BAD' lengths so that
+# the code can pad up by a byte and get around the firmware problem
+def is_bad_length_for_crc(data_len):
+    return (data_len >= 254) and ((data_len - 254) % 256 == 0)
+
+# print("Test 254:", is_bad_length_for_crc(254))
+# print("Test 255:", is_bad_length_for_crc(255))
+# print("Test 509:", is_bad_length_for_crc(509))
+# print("Test 510:", is_bad_length_for_crc(510))
+# print("Test 511:", is_bad_length_for_crc(511))
+# print("Test 765:", is_bad_length_for_crc(765))
+# print("Test 766:", is_bad_length_for_crc(766))
+# print("Test 767:", is_bad_length_for_crc(767))
 
 # No LCD,  so lcd limit == 0
 LIMIT_NAMES = ("Bytes", "Words", "LCD chars", "Event handlers", "Token bytes")
@@ -575,7 +588,7 @@ class TokenAnalyser(object):
                 bytes.extend(t.get_token_bits())
 
             # skip bad crc lengths
-            if len(bytes) in BAD_CRC_LENGTHS:
+            if (is_bad_length_for_crc(len(bytes))):
                 print("Warning - skipping bad CRC length at {} bytes.".format(len(bytes)))
                 added_bytes = 1
                 bytes.extend([0xff])
@@ -640,7 +653,7 @@ class TokenAnalyser(object):
             new_bytes = header_list[4:] + bytes
 
             # skip bad crc lengths
-            if len(new_bytes) in BAD_CRC_LENGTHS:
+            if (is_bad_length_for_crc(len(new_bytes))):
                 print("Warning - skipping bad CRC length at {} bytes.".format(len(new_bytes)))
                 added_bytes += 1
                 new_bytes.extend([0xff])
