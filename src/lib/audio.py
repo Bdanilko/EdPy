@@ -43,6 +43,7 @@ RAMP = (1, 3, 7, 16, 50, 84, 93, 97, 99)
 # Hz, we have to divide it by 2000 to get samples per 0.5ms.
 SAMPLES_PER_QUANTA = WAVE_SAMPLE_RATE_HZ / 2000
 
+PULSE_AUDIO = True
 
 # ############ main audio creator class ###############################################
 
@@ -73,6 +74,14 @@ class Output(object):
         self.lastRight = 128
         self.downloadBytesBetweenPauses = 1536
         self.downloadPauseMsecs = 2000
+
+        if (PULSE_AUDIO):
+            self.audio_func = self.createAudioWithPulses
+            self.silence_func = self.createSilenceWithPulses
+        else:
+            self.audio_func = self.createAudioRamping
+            self.silence_func = self.createSilenceRamping
+
 
     def SetSampleRate(self, sampleRate):
         self.sampleRate = sampleRate
@@ -124,39 +133,39 @@ class Output(object):
         pauseCount = 0
 
         # 500 milliseconds (1000 midQuantas) of silence at the beginning
-        waveWriter.writeframes(self.createSilenceRamping(1000, self.sampleRate))
+        waveWriter.writeframes(self.silence_func(1000, self.sampleRate))
 
         preamble = 0
         while (preamble < self.samplesPerQuanta):
-            waveWriter.writeframes(self.createAudioRamping(0, self.sampleRate))
+            waveWriter.writeframes(self.audio_func(0, self.sampleRate))
             preamble += 1
 
         while (index < len(binString)):
             if (pauseCount == self.downloadBytesBetweenPauses):
                 preamble = 0
                 while (preamble < self.downloadPauseMsecs):
-                    waveWriter.writeframes(self.createAudioRamping(0, self.sampleRate))
+                    waveWriter.writeframes(self.audio_func(0, self.sampleRate))
                     preamble += 1
                 pauseCount = 0
 
             data = binString[index]
 
             # start
-            waveWriter.writeframes(self.createAudioRamping(6, self.sampleRate))
+            waveWriter.writeframes(self.audio_func(6, self.sampleRate))
 
             # now the actual data -- big endian or little endian
             mask = 1
             ones = 0
             while (mask <= 0x80):
                 if (data & mask):
-                    waveWriter.writeframes(self.createAudioRamping(2, self.sampleRate))
+                    waveWriter.writeframes(self.audio_func(2, self.sampleRate))
                     ones += 1
                 else:
-                    waveWriter.writeframes(self.createAudioRamping(0, self.sampleRate))
+                    waveWriter.writeframes(self.audio_func(0, self.sampleRate))
                 mask <<= 1
 
             # add stop - BBB Changed to 8 - differs from start
-            waveWriter.writeframes(self.createAudioRamping(8, self.sampleRate))
+            waveWriter.writeframes(self.audio_func(8, self.sampleRate))
 
             index += 1
             pauseCount += 1
@@ -164,11 +173,11 @@ class Output(object):
         # added to end as well - to ensure entire data is played. - ## BBB
         preamble = 0
         while (preamble < self.samplesPerQuanta):
-            waveWriter.writeframes(self.createAudioRamping(0, self.sampleRate))
+            waveWriter.writeframes(self.audio_func(0, self.sampleRate))
             preamble += 1
 
         # 500 milliseconds (1000 midQuantas) of silence at the end
-        waveWriter.writeframes(self.createSilenceRamping(1000, self.sampleRate))
+        waveWriter.writeframes(self.silence_func(1000, self.sampleRate))
 
     def createAudioRamping(self, midQuantas, sample_rate):
         data = b""
@@ -185,9 +194,38 @@ class Output(object):
 
         return data
 
+    def createAudioWithPulses(self, midQuantas, sample_rate):
+        data = ""
+        samples_per_quanta = sample_rate / 2000
+        total_samples = 2 * samples_per_quanta + (midQuantas * samples_per_quanta)
+
+        # write far
+        data += chr(255) + chr(0)
+        # write near
+        data += chr(0) + chr(255)
+
+        count = 2
+        while count < total_samples:
+            data += chr(128) + chr(128)
+            count += 1
+
+        return data
+
     def createSilenceRamping(self, midQuantas, sample_rate):
         samples_per_quanta = sample_rate / 2000
         return self.ramp(128, 128, midQuantas * samples_per_quanta)
+
+    def createSilenceWithPulses(self, midQuantas, sample_rate):
+        data = ""
+        samples_per_quanta = sample_rate / 2000
+        total_samples = midQuantas * samples_per_quanta
+
+        count = 0
+        while count < total_samples:
+            data += chr(128) + chr(128)
+            count += 1
+
+        return data
 
     def ramp(self, newLeft, newRight, samples):
         # print "ramp", samples
