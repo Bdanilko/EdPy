@@ -1700,16 +1700,23 @@ def CompileBoolCheck(programIR, functionName, line, compileState):
 
         # the E flag in flags will be set on moving value into ACC
 
+        # Fix for a mistake in Or processing. This was found (and a correct fix suggested)
+        # by Ales Jerabek <ales.jerabek@gmail.com> -- Thanks!
+
         if (line.op == "Or"):
             # FOR OR if ZERO, then we have to keep checking!
             compileState.AddStatement("brz {}".format(continueProcessingLabel))
+
+            # The answer here is TRUE -- move that into the target
+            compileState.AddStatement("movw $1 %_cpu:acc")
+            StoreAccIntoWordVariable(line.target, functionName, compileState)
         else:
             # FOR AND if NON-ZERO, then we have to keep checking!
             compileState.AddStatement("brnz {}".format(continueProcessingLabel))
 
-        # The answer here is FALSE -- move that into the target
-        compileState.AddStatement("movw $0 %_cpu:acc")
-        StoreAccIntoWordVariable(line.target, functionName, compileState)
+            # The answer here is FALSE -- move that into the target
+            compileState.AddStatement("movw $0 %_cpu:acc")
+            StoreAccIntoWordVariable(line.target, functionName, compileState)
 
         # short curcuit the rest of the processing
         compileState.AddStatement("bra {}".format(MakeControlLabel(line.num, line.op, "end")))

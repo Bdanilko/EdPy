@@ -65,7 +65,7 @@ def main(args):
 
         # print(statements)
         dBytes, dString, dType, version = token_assembler.assemble_lines(statements, False)
-        # print (dType, version)
+        # print("Size:", len(dBytes), len(dString), dType, version)
         if (len(dBytes) == 0 or dType == 0 or version == 0):
             rtc = 1
         elif (not args.checkOnly) and (not args.nowav):
@@ -115,7 +115,7 @@ def ProcessCommandArgs(args):
 
     testChoices = ("pass", "fail")
 
-    version = "1.2.0"
+    version = "1.2.11"
     parser = argparse.ArgumentParser(prog="EdPy.py", description="Full Ed.Py compiler, version %s - from source to wav file." % (version,))
     parser.add_argument("langPath", metavar="LANG", type=argparse.FileType('r'),
                         help="Path to a language file")

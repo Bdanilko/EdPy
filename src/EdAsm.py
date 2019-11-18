@@ -81,7 +81,7 @@ def ProcessCommandArgs(args):
                     ("warn", io.LEVEL.WARN), ("info", io.LEVEL.INFO),
                     ("verbose", io.LEVEL.VERBOSE,), ("debug", io.LEVEL.DEBUG))
 
-    version = "1.2.0"
+    version = "1.2.11"
     parser = argparse.ArgumentParser(prog="EdAsm.py",
                                      description="Token assembler for Edison and Ed.Py, version %s" % (version,))
 
@@ -108,7 +108,7 @@ def ProcessCommandArgs(args):
                         help="Add preamble to the binary file written.")
 
     parser.add_argument("-l", type=util.LowerStr,
-                        choices=zip(*levelChoices)[0], default="error",  # default="debug",
+                        choices=list(zip(*levelChoices))[0], default="error",  # default="debug",
                         help="Output level (default:%(default)s). " +
                         "\nAll output from previous levels and this one will be generated")
 

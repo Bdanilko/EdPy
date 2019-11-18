@@ -76,7 +76,7 @@ def assem_file(f_name, called_from=[], pass_err=None):
             print(output)
         return False
 
-    fh = file(f_name, 'rt')
+    fh = file(f_name, 'rU')
 
     # get each line but insert a file if find 'INSERT TOKENS'
     line_num = 1
@@ -1314,7 +1314,7 @@ def finish_assembley(source, debug):
             token_stream.dump_tokens(source)
             token_analysis.dump_extras()
 
-        download_type, version, header = token_analysis.create_header()
+        download_type, version, header, added_bytes = token_analysis.create_header()
         # print(download_type, version, header)
 
     except:
@@ -1337,6 +1337,12 @@ def finish_assembley(source, debug):
         bytes = t.get_token_bits()
         download_bytes.extend(bytes)
         for b in bytes:
+            download_str += chr(b)
+
+    if (added_bytes > 0):
+        extra_bytes = [0xff] * added_bytes
+        download_bytes.extend(extra_bytes)
+        for b in extra_bytes:
             download_str += chr(b)
 
     return download_bytes, download_str, download_type, version
